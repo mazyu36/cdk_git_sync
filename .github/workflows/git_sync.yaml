@@ -1,0 +1,54 @@
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  publish:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get temporary credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Cache Dependency
+        uses: actions/cache@v3
+        id: cache_dependency_id
+        env:
+          cache-name: cache-cdk-dependency
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}-
+
+      - name: Install CDK Dependency
+        if: steps.cache_dependency_id.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Synthesize CDK stacks
+        run: npx cdk synth ${{ vars.STACK_NAME }} > cfn_git_sync/template.yaml
+
+      - name: Upload generated template as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: cdk-generated-template
+          path: cfn_git_sync/template.yaml
+
+      - name: Assets publish
+        run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
+
+        # run: npx cdk-assets publish -p cdk.out/CdkGitTestStack.assets.json
