@@ -7,14 +7,6 @@ Resources:
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: CdkGitSyncStack/CdkGitTestQueue/Resource
-  CdkGitTestQueue2CA1C2FBF:
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 300
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
-    Metadata:
-      aws:cdk:path: CdkGitSyncStack/CdkGitTestQueue2/Resource
   LambdaFunctionServiceRoleC555A460:
     Type: AWS::IAM::Role
     Properties:
