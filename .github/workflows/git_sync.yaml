@@ -61,3 +61,26 @@ jobs:
           git add .
           git commit -m "Add generated template.yaml to the pull request"
           git push origin HEAD:${{ github.head_ref }}
+
+      - name: CDK diff
+        run: npx cdk diff ${{ vars.STACK_NAME }} 2>&1 2>&1 | tee output.log
+
+      - name: Save output
+        id: output_log
+        run: |
+          echo "data<<EOF" >> $GITHUB_OUTPUT
+          echo "$(cat output.log)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post diff in comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: cdk-diff
+          message: |
+            #### cdk diff
+            <details>
+              <summary>Show diff</summary>
+              ` ` `bash
+              ${{ steps.output_log.outputs.data }}
+              ` ` `
+            </details>
