@@ -48,6 +48,7 @@ jobs:
       - name: Synthesize CDK stacks
         run: npx cdk synth ${{ vars.STACK_NAME }} > cfn_git_sync/template.yaml
 
+      # テンプレートが更新されたかをチェック
       - name: Git diff
         id: diff
         run: |
@@ -55,9 +56,13 @@ jobs:
           git diff --name-only --exit-code
         continue-on-error: true
 
+      # テンプレートが更新された場合のみ以降実施
+      # AssetsをPublish
       - name: Assets publish
         run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
+        if: steps.diff.outcome == 'failure'
 
+      # テンプレートをPush
       - name: Add generated files to the pull request
         run: |
           git config --local user.email ${{ env.GITHUB_MAIL }}
@@ -67,10 +72,10 @@ jobs:
           git push origin HEAD:${{ github.head_ref }}
         if: steps.diff.outcome == 'failure'
 
+      # cdk diffを実施してPRにコメントとして追加
       - name: CDK diff
         run: npx cdk diff ${{ vars.STACK_NAME }} 2>&1 2>&1 | tee output.log
         if: steps.diff.outcome == 'failure'
-
       - name: Save output
         id: output_log
         run: |
@@ -78,7 +83,6 @@ jobs:
           echo "$(cat output.log)" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         if: steps.diff.outcome == 'failure'
-
       - name: Post diff in comment
         uses: mshick/add-pr-comment@v2
         with:
