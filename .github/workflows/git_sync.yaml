@@ -9,6 +9,8 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-1
+  GITHUB_MAIL: 41898282+github-actions[bot]@users.noreply.github.com
+  GITHUB_NAME: github-actions[bot]
 
 jobs:
   publish:
@@ -48,8 +50,9 @@ jobs:
 
       - name: Add generated files to the pull request
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          git remote set-url origin https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git config --local user.email ${{ env.GITHUB_MAIL }}
+          git config --local user.name ${{ env.GITHUB_NAME }}
           git add .
           git commit -m "Add generated template.yaml to the pull request"
           git push origin HEAD:${{ github.head_ref }}
