@@ -4,6 +4,7 @@ on:
       - main
     types:
       - opened
+      - synchronize
       - reopened
 
 env:
@@ -47,6 +48,13 @@ jobs:
       - name: Synthesize CDK stacks
         run: npx cdk synth ${{ vars.STACK_NAME }} > cfn_git_sync/template.yaml
 
+      - name: Git diff
+        id: diff
+        run: |
+          git add -N .
+          git diff --name-only --exit-code
+        continue-on-error: true
+
       - name: Assets publish
         run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
 
@@ -57,9 +65,11 @@ jobs:
           git add .
           git commit -m "Add generated template.yaml to the pull request"
           git push origin HEAD:${{ github.head_ref }}
+        if: steps.diff.outcome == 'failure'
 
       - name: CDK diff
         run: npx cdk diff ${{ vars.STACK_NAME }} 2>&1 2>&1 | tee output.log
+        if: steps.diff.outcome == 'failure'
 
       - name: Save output
         id: output_log
@@ -67,6 +77,7 @@ jobs:
           echo "data<<EOF" >> $GITHUB_OUTPUT
           echo "$(cat output.log)" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        if: steps.diff.outcome == 'failure'
 
       - name: Post diff in comment
         uses: mshick/add-pr-comment@v2
@@ -82,3 +93,4 @@ jobs:
               </code>
               </pre>
             </details>
+        if: steps.diff.outcome == 'failure'
