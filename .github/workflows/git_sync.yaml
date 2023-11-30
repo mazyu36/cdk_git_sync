@@ -75,6 +75,7 @@ jobs:
       - name: Post diff in comment
         uses: mshick/add-pr-comment@v2
         with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           message-id: cdk-diff
           message: |
             #### cdk diff
