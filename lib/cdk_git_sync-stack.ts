@@ -12,6 +12,11 @@ export class CdkGitSyncStack extends cdk.Stack {
       visibilityTimeout: cdk.Duration.seconds(300)
     });
 
+    // 追加
+    const newQueue = new sqs.Queue(this, 'CdkGitTestNewQueue', {
+      visibilityTimeout: cdk.Duration.seconds(300)
+    });
+
     // Lambda functionを追加
     new lambda.Function(this, 'LambdaFunction', {
       runtime: lambda.Runtime.PYTHON_3_11,
