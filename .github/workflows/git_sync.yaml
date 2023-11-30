@@ -3,21 +3,27 @@ on:
     branches:
       - main
     types:
-      - closed
+      - opened
+      - synchronize
+      - reopened
 
 env:
   AWS_REGION: ap-northeast-1
+  GITHUB_MAIL: 41898282+github-actions[bot]@users.noreply.github.com
+  GITHUB_NAME: github-actions[bot]
 
 jobs:
   publish:
     permissions:
       id-token: write
-      contents: read
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Get temporary credentials with OIDC
         uses: aws-actions/configure-aws-credentials@v2
@@ -42,13 +48,53 @@ jobs:
       - name: Synthesize CDK stacks
         run: npx cdk synth ${{ vars.STACK_NAME }} > cfn_git_sync/template.yaml
 
-      - name: Upload generated template as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cdk-generated-template
-          path: cfn_git_sync/template.yaml
+      # テンプレートが更新されたかをチェック
+      - name: Git diff
+        id: diff
+        run: |
+          git add -N .
+          git diff --name-only --exit-code
+        continue-on-error: true
 
+      # テンプレートが更新された場合のみ以降実施
+      # AssetsをPublish
       - name: Assets publish
         run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
+        if: steps.diff.outcome == 'failure'
 
-        # run: npx cdk-assets publish -p cdk.out/CdkGitTestStack.assets.json
+      # テンプレートをPush
+      - name: Add generated files to the pull request
+        run: |
+          git config --local user.email ${{ env.GITHUB_MAIL }}
+          git config --local user.name ${{ env.GITHUB_NAME }}
+          git add .
+          git commit -m "Add generated template.yaml to the pull request"
+          git push origin HEAD:${{ github.head_ref }}
+        if: steps.diff.outcome == 'failure'
+
+      # cdk diffを実施してPRにコメントとして追加
+      - name: CDK diff
+        run: npx cdk diff ${{ vars.STACK_NAME }} 2>&1 2>&1 | tee output.log
+        if: steps.diff.outcome == 'failure'
+      - name: Save output
+        id: output_log
+        run: |
+          echo "data<<EOF" >> $GITHUB_OUTPUT
+          echo "$(cat output.log)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        if: steps.diff.outcome == 'failure'
+      - name: Post diff in comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: cdk-diff
+          message: |
+            #### cdk diff
+            <details>
+              <summary>Show diff</summary>
+              <pre>
+              <code>
+              ${{ steps.output_log.outputs.data }}
+              </code>
+              </pre>
+            </details>
+        if: steps.diff.outcome == 'failure'
