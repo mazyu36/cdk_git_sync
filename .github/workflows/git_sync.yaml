@@ -48,9 +48,8 @@ jobs:
 
       - name: Add generated files to the pull request
         run: |
-          git branch
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .
           git commit -m "Add generated template.yaml to the pull request"
-          git push origin
+          git push origin HEAD:${{ github.head_ref }}
