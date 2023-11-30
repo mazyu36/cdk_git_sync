@@ -3,7 +3,7 @@ on:
     branches:
       - main
     types:
-      - closed
+      - opened
 
 env:
   AWS_REGION: ap-northeast-1
@@ -14,7 +14,6 @@ jobs:
       id-token: write
       contents: read
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -51,4 +50,10 @@ jobs:
       - name: Assets publish
         run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
 
-        # run: npx cdk-assets publish -p cdk.out/CdkGitTestStack.assets.json
+      - name: CloudFormation template commit
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "CFn template added."
+          git push
