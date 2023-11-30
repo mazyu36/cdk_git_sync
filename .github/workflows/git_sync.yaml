@@ -6,9 +6,12 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 env:
   AWS_REGION: ap-northeast-1
+  GITHUB_MAIL: 41898282+github-actions[bot]@users.noreply.github.com
+  GITHUB_NAME: github-actions[bot]
 
 jobs:
   publish:
@@ -19,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Get temporary credentials with OIDC
         uses: aws-actions/configure-aws-credentials@v2
@@ -48,9 +53,8 @@ jobs:
 
       - name: Add generated files to the pull request
         run: |
-          git branch
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          git config --local user.email ${{ env.GITHUB_MAIL }}
+          git config --local user.name ${{ env.GITHUB_NAME }}
           git add .
           git commit -m "Add generated template.yaml to the pull request"
-          git push origin
+          git push -f origin HEAD:${{ github.head_ref }}
