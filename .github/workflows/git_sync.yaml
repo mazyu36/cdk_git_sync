@@ -51,9 +51,4 @@ jobs:
         run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
 
       - name: CloudFormation template commit
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .
-          git commit -m "CFn template added."
-          git push
+        uses: stefanzweifel/git-auto-commit-action@v5
