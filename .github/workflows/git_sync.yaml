@@ -75,12 +75,16 @@ jobs:
       - name: Post diff in comment
         uses: mshick/add-pr-comment@v2
         with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: "github-actions[bot]"
           message-id: cdk-diff
           message: |
             #### cdk diff
             <details>
               <summary>Show diff</summary>
               ` ` `bash
+
               ${{ steps.output_log.outputs.data }}
+
               ` ` `
             </details>
