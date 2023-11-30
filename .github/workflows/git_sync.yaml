@@ -1,8 +1,8 @@
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - main
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened]
 
 permissions:
   contents: write
@@ -43,14 +43,14 @@ jobs:
       - name: Synthesize CDK stacks
         run: npx cdk synth ${{ vars.STACK_NAME }} > cfn_git_sync/template.yaml
 
-      - name: Upload generated template as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cdk-generated-template
-          path: cfn_git_sync/template.yaml
-
       - name: Assets publish
         run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
 
-      - name: CloudFormation template commit
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Add generated files to the pull request
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout ${{ github.head_ref }}
+          git add cfn_git_sync/template.yaml
+          git commit -m "Add generated template.yaml to the pull request"
+          git push origin ${{ github.head_ref }}
