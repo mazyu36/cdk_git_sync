@@ -53,3 +53,5 @@ jobs:
           git add .
           git commit -m "Add generated template.yaml to the pull request"
           git push origin HEAD:${{ github.head_ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
