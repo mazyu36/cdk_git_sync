@@ -6,6 +6,7 @@ import { CdkPublishGhOidcStack } from '../lib/oidc-stack';
 
 const app = new cdk.App();
 new CdkGitSyncStack(app, 'CdkGitSyncStack', {
+  stackName: 'CdkGitSyncStack'
 });
 
 new CdkPublishGhOidcStack(app, 'CdkPublishGhOidcStack', {})
