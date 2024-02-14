@@ -46,7 +46,7 @@ jobs:
         run: npm install
 
       - name: Synthesize CDK stacks
-        run: npx cdk synth ${{ vars.STACK_NAME }} > cfn_git_sync/template.yaml
+        run: npx cdk synth ${{ vars.STACK_NAME }} -o artifact
 
       # Check if the template has been updated
       - name: Git diff
@@ -59,7 +59,7 @@ jobs:
       # Perform the following steps only if the template has been updated
       # Publish Assets
       - name: Assets publish
-        run: npx cdk-assets publish -p cdk.out/${{ vars.STACK_NAME }}.assets.json
+        run: npx cdk-assets publish -p artifact/${{ vars.STACK_NAME }}.assets.json
         if: steps.diff.outcome == 'failure'
 
       # Push the template

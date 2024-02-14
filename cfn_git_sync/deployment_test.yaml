@@ -1,0 +1,3 @@
+template-file-path: cfn_git_sync/CdkGitSyncStack.template.json
+parameters: {}
+tags: {}
